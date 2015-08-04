@@ -7,12 +7,16 @@ ArchivesSpace::Application::config.after_initialize do
     # "login" method using environment rather than username/password to authenticate
     def self.env_login(context)
       username = context.env["HTTP_X_REMOTE_USER"]
-      uri = JSONModel(:user).uri_for("#{username}/login/trusted")
 
-      response = JSONModel::HTTP.post_form(uri)
+      if (username.is_a?(String) and !username.empty?)
+        uri = JSONModel(:user).uri_for("#{username}/login/trusted")
+        response = JSONModel::HTTP.post_form(uri)
 
-      if response.code == '200'
-        ASUtils.json_parse(response.body)
+        if response.code == '200'
+          ASUtils.json_parse(response.body)
+        else
+          nil
+        end
       else
         nil
       end
