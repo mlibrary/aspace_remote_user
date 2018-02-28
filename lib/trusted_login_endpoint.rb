@@ -1,4 +1,3 @@
-require 'pry'
 module MLibrary
   def do_login_trusted(user_class: User)
     if !env['HTTP_X_FORWARDED_SERVER'] && params[:password]==AppConfig[:mlibrary_remote_user_password]
