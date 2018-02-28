@@ -5,6 +5,7 @@ class ArchivesSpaceService < Sinatra::Base
   Endpoint.post('/users/:username/login/trusted')
     .description("Log in")
     .params(["username", Username, "Your username"],
+            ["password", String, "Your password"],
             ["expiring", BooleanParam, "true if the created session should expire",
              :default => true])
     .permissions([])

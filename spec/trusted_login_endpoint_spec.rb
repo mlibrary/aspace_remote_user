@@ -1,4 +1,3 @@
-#require_relative "../backend/controllers/users"
 require "trusted_login_endpoint"
 require "ostruct"
 
@@ -13,7 +12,7 @@ class MockPlugin
   end
 
   def params
-    {username: "admin"}
+    {username: "admin", password: "mock_pasword"}
   end
 
   def create_session_for(_,_)
@@ -38,11 +37,21 @@ class MockPlugin
   end
 end
 
+class AppConfig
+  def self.[](param)
+    "mock_pasword" if param==:mlibrary_remote_user_password
+  end
+end
 
 RSpec.describe "MLibrary#do_login_trusted" do
 
   let(:plugin) {MockPlugin.new}
   
+  it "responds with user object if user found" do
+    expect(plugin).to receive(:json_response).with({:session => 1, :user => OpenStruct.new(some_key: "another_value", permissions: "some_value") })
+    plugin.do_login_trusted
+  end
+
   it "responds with 403 if env['HTTP_X_FORWARDED_SERVER']" do
     allow(plugin).to receive(:env).and_return({'HTTP_X_FORWARDED_SERVER'=>true})
     expect(plugin).to receive(:json_response).with(anything, 403)
@@ -50,17 +59,19 @@ RSpec.describe "MLibrary#do_login_trusted" do
   end
 
   it "responds with 403 if user not found" do
-    allow(plugin).to receive(:params).and_return({:username=>'fakeuser'})
+    allow(plugin).to receive(:params).and_return({:username=>'fakeuser', :password=>'mock_pasword'})
     expect(plugin).to receive(:json_response).with(anything, 403)
     plugin.do_login_trusted
   end
 
-  it "responds with user object if user found" do
-    expect(plugin).to receive(:json_response).with({:session => 1, :user => OpenStruct.new(some_key: "another_value", permissions: "some_value") })
+  it "responds with 403 if password is missing" do
+    allow(plugin).to receive(:params).and_return({:username=>'admin'})
+    expect(plugin).to receive(:json_response).with(anything, 403)
     plugin.do_login_trusted
   end
 
-  xit "responds with 403 if correct secret is not supplied" do
+  it "responds with 403 if password is incorrect" do
+    allow(plugin).to receive(:params).and_return({:username=>'admin', :password=>'wrong_password'})
     expect(plugin).to receive(:json_response).with(anything, 403)
     plugin.do_login_trusted
   end

@@ -6,11 +6,11 @@ ArchivesSpace::Application::config.after_initialize do
   User.class_eval do
     # "login" method using environment rather than username/password to authenticate
     def self.env_login(context)
-      username = context.env["HTTP_X_REMOTE_USER"]
+      username = context.env[ AppConfig[:mlibrary_remote_user_env_var] ]
 
       if (username.is_a?(String) and !username.empty?)
         uri = JSONModel(:user).uri_for("#{username}/login/trusted")
-        response = JSONModel::HTTP.post_form(uri)
+        response = JSONModel::HTTP.post_form(uri, :password => AppConfig[:mlibrary_remote_user_password])
 
         if response.code == '200'
           ASUtils.json_parse(response.body)
@@ -46,11 +46,11 @@ ArchivesSpace::Application::config.after_initialize do
   # controllers/session_controller
   SessionController.class_eval do
     def logout
-      user_has_env_based_auth = (session[:user] == env["HTTP_X_REMOTE_USER"])
+      user_has_env_based_auth = (session[:user] == env[ AppConfig[:mlibrary_remote_user_env_var] ])
       reset_session
       if user_has_env_based_auth
         cookies.select {|k,v| /^cosign/.match k and cookies.delete(k)}
-        redirect_to "https://webservices.itcs.umich.edu/cgi-bin/logout?http://www.lib.umich.edu/"
+        redirect_to AppConfig[:mlibrary_remote_user_cosign_logout_url]
       else
         redirect_to :root
       end
