@@ -9,6 +9,9 @@ ArchivesSpace::Application::config.after_initialize do
       username = context.env[ AppConfig[:mlibrary_remote_user_env_var] ]
 
       if (username.is_a?(String) and !username.empty?)
+        if username =~ /@/
+          username = username.gsub(/@/,'-at-')
+        end
         uri = JSONModel(:user).uri_for("#{username}/login/trusted")
         response = JSONModel::HTTP.post_form(uri, :password => AppConfig[:mlibrary_remote_user_password])
 
